@@ -2,7 +2,11 @@
 
 **Automated earnings concall intelligence for NSE-listed Indian companies.**
 
-The AfterCall polls NSE corporate announcements, identifies likely concall transcript filings, downloads and extracts their content, and generates AI-powered summaries. Processing is automatic, but detection is polling-based rather than instantaneous.
+Companies have a lot to say after announcing their quarterly results. Somewhere between the exchange filing and the actual transcript, there's usually a little digging involved.
+
+The AfterCall takes care of that part. It watches NSE announcements, finds likely earnings-call transcripts, extracts the conversation, and turns it into structured summaries that are easier to follow.
+
+It runs on its own, with one small catch: the market may move in seconds, but this watcher checks in every five minutes.
 
 ---
 
@@ -27,6 +31,7 @@ NSE API -> Watcher -> Downloader -> Extractor -> Summarizer (Gemini)
                                                      |
                                                 Frontend (/)
 ```
+The pipeline is intentionally kept in separate stages. Finding a document, reading it, and understanding it are three different problems. Better not make one responsible for all three.
 
 | Path | What it does |
 |---|---|
@@ -110,6 +115,8 @@ Database file paths are stored relative to the project root so moving a checkout
 - **Exchange coverage:** the unattended watcher is NSE-only. A BSE fetcher is not wired into the pipeline, so this project does not claim BSE ingestion or cross-exchange deduplication.
 - **Long transcripts:** the summarizer uses overlapping chunks followed by an aggregation call. Map-reduce reduces prompt size but can lose nuance; chunk notes are sent without the previous fixed 30,000-character truncation.
 
+A meeting announcement is not a meeting transcript. The distinction matters more than it initially sounds.
+
 ## Samples
 
 See [`samples/`](samples/) for three JSON and Markdown summaries. Original exchange PDFs and full transcript text are not redistributed here; each sample links to its NSE source filing.
@@ -153,4 +160,6 @@ AI summaries are generated from actual transcript text. They are for information
 
 ---
 
-*Built with FastAPI, pdfplumber, and Google Gemini. Data sourced from NSE corporate filings.*
+
+
+*May your PDFs be text-based and your API calls return 200 ✨.*
