@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The AfterCall</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <span class="logo-mark">▶</span>
+      <span class="logo-text">The AfterCall</span>
+    </div>
+    <div class="status-pill" id="ws-status">connecting...</div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1>Earnings Intelligence, Decoded</h1>
+      <p>AI-powered summaries of NSE &amp; BSE concall transcripts — updated in real time.</p>
+    </section>
+
+    <section class="live-banner" id="live-banner" style="display:none">
+      <span class="live-dot"></span>
+      <span id="live-text">New summary available</span>
+    </section>
+
+    <section class="companies" id="companies">
+      <div class="loading">Loading companies...</div>
+    </section>
+  </main>
+
+  <footer>
+    <p>The AfterCall — data sourced from NSE / BSE filings. AI summaries are for informational purposes only.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

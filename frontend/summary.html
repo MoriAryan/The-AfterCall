@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Summary — The AfterCall</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <a href="/" class="logo-link">
+        <span class="logo-mark">▶</span>
+        <span class="logo-text">The AfterCall</span>
+      </a>
+    </div>
+    <div class="status-pill" id="ws-status">connecting...</div>
+  </header>
+
+  <main class="summary-page">
+    <div class="summary-header" id="summary-header">
+      <div class="loading">Loading summary...</div>
+    </div>
+
+    <div class="summary-body" id="summary-body" style="display:none">
+      <div class="tldr-box">
+        <h2>TL;DR</h2>
+        <p id="tldr"></p>
+      </div>
+
+      <div class="summary-grid">
+        <div class="summary-card">
+          <h3>Management Commentary</h3>
+          <ul id="management-commentary"></ul>
+        </div>
+
+        <div class="summary-card">
+          <h3>Guidance &amp; Outlook</h3>
+          <ul id="guidance"></ul>
+        </div>
+
+        <div class="summary-card full-width">
+          <h3>Key Metrics</h3>
+          <table id="metrics-table">
+            <thead><tr><th>Metric</th><th>Value</th><th>Period</th><th>Notes</th></tr></thead>
+            <tbody id="metrics-body"></tbody>
+          </table>
+        </div>
+
+        <div class="summary-card">
+          <h3>Segment Performance</h3>
+          <ul id="segments"></ul>
+        </div>
+
+        <div class="summary-card">
+          <h3>Risks &amp; Concerns</h3>
+          <ul id="risks"></ul>
+        </div>
+
+        <div class="summary-card full-width">
+          <h3>Analyst Q&amp;A Highlights</h3>
+          <div id="qa-list"></div>
+        </div>
+      </div>
+
+      <div class="source-links">
+        <a id="source-pdf" href="#" target="_blank" class="btn btn-outline">View Original PDF ↗</a>
+        <a id="source-transcript" href="#" target="_blank" class="btn btn-outline">View Extracted Text ↗</a>
+        <a id="source-markdown" href="#" target="_blank" class="btn btn-outline">Download Markdown ↗</a>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p>The AfterCall — data sourced from NSE / BSE filings. AI summaries are for informational purposes only.</p>
+  </footer>
+
+  <script src="summary.js"></script>
+</body>
+</html>
