@@ -29,7 +29,7 @@ def run_summarization():
             WHERE f.text_path IS NOT NULL
               AND f.text_path != ''
               AND s.filing_id IS NULL
-              AND f.status IN ('summarize_pending', 'extracted_pending', 'done')
+              AND f.status IN ('summarize_pending', 'extracted_pending', 'failed', 'done')
         """).fetchall()
         filings = [dict(r) for r in rows]
 
