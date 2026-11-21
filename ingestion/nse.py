@@ -8,6 +8,7 @@ import requests
 from datetime import datetime, timedelta
 
 CONCALL_DESC = "Analysts/Institutional Investor Meet/Con. Call Updates"
+MIN_TRANSCRIPT_SIZE_KB = 80  # filter out 1-page cover letters and schedule notices
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
@@ -33,11 +34,26 @@ def _get_session():
     return _session
 
 
-def _parse_filing(item: dict) -> dict | None:
+def _parse_size_kb(size_str: str) -> float:
+    """Parse NSE file size string like '1.26 MB' or '387.00 KB' to KB."""
+    try:
+        parts = size_str.strip().split()
+        val = float(parts[0])
+        return val * 1024 if parts[1].upper() == "MB" else val
+    except Exception:
+        return 0.0
+
+
+def _parse_filing(item: dict, min_size_kb: float = MIN_TRANSCRIPT_SIZE_KB) -> dict | None:
     pdf_url = item.get("attchmntFile")
     if not pdf_url or not pdf_url.endswith(".pdf"):
         return None
     if item.get("desc") != CONCALL_DESC:
+        return None
+
+    # Skip obvious schedule notices by file size
+    size_kb = _parse_size_kb(item.get("attFileSize", "") or "")
+    if size_kb > 0 and size_kb < min_size_kb:
         return None
 
     company = item.get("sm_name", "Unknown")
@@ -54,6 +70,7 @@ def _parse_filing(item: dict) -> dict | None:
         "isin": isin,
         "filed_at": filed_at,
         "pdf_url": pdf_url,
+        "size_kb": round(size_kb, 1),
     }
 
 
