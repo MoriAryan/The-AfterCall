@@ -28,8 +28,9 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.db import init_db, get_all_companies, get_filing
+from backend.db import init_db, get_all_companies, get_filing, resolve_path
 from backend.pipeline import watcher_loop
+from summarizer.summarizer import normalize_summary, transcript_metadata
 
 # --- WebSocket connection manager ---
 
@@ -116,10 +117,50 @@ def get_summary(filing_id: str):
     filing = get_filing(filing_id)
     if not filing or not filing.get("json_path"):
         raise HTTPException(status_code=404, detail="Summary not found")
-    json_path = Path(filing["json_path"])
+    json_path = resolve_path(filing["json_path"])
     if not json_path.exists():
         raise HTTPException(status_code=404, detail="Summary file missing")
-    return json.loads(json_path.read_text(encoding="utf-8"))
+    summary = json.loads(json_path.read_text(encoding="utf-8"))
+    if not isinstance(summary, dict):
+        raise HTTPException(status_code=500, detail="Stored summary has invalid schema")
+    schema_fields = {
+        "company", "scrip_code", "nse_symbol", "quarter", "call_date",
+        "source", "source_url", "tldr", "management_commentary", "guidance",
+        "segment_performance", "key_metrics", "notable_qa", "risks",
+    }
+    if not schema_fields.issubset(summary):
+        required = {
+            "tldr", "management_commentary", "guidance",
+            "segment_performance", "key_metrics",
+        }
+        if (
+            not required.issubset(summary)
+            or not ("notable_qa" in summary or "qa_highlights" in summary)
+            or not ("risks" in summary or "risks_and_concerns" in summary)
+        ):
+            raise HTTPException(status_code=500, detail="Stored summary has invalid schema")
+
+        summary = normalize_summary(summary)
+        if filing.get("text_path"):
+            text_path = resolve_path(filing["text_path"])
+            if text_path.exists():
+                summary.update(
+                    transcript_metadata(
+                        filing, text_path.read_text(encoding="utf-8")
+                    )
+                )
+        summary.update({
+            "company": filing["company"],
+            "source": filing["exchange"],
+            "source_url": filing["pdf_url"],
+            "filing_id": filing["id"],
+        })
+        summary.setdefault("scrip_code", "")
+        summary.setdefault("nse_symbol", filing.get("symbol") or "")
+        summary.setdefault("quarter", "")
+        summary.setdefault("call_date", "")
+
+    return summary
 
 
 @app.get("/api/companies/{filing_id}/summary/markdown")
@@ -127,7 +168,7 @@ def get_summary_markdown(filing_id: str):
     filing = get_filing(filing_id)
     if not filing or not filing.get("md_path"):
         raise HTTPException(status_code=404, detail="Markdown summary not found")
-    md_path = Path(filing["md_path"])
+    md_path = resolve_path(filing["md_path"])
     if not md_path.exists():
         raise HTTPException(status_code=404, detail="Markdown file missing")
     return FileResponse(str(md_path), media_type="text/markdown")
@@ -138,7 +179,7 @@ def get_transcript(filing_id: str):
     filing = get_filing(filing_id)
     if not filing or not filing.get("text_path"):
         raise HTTPException(status_code=404, detail="Transcript not found")
-    text_path = Path(filing["text_path"])
+    text_path = resolve_path(filing["text_path"])
     if not text_path.exists():
         raise HTTPException(status_code=404, detail="Transcript file missing")
     return FileResponse(str(text_path), media_type="text/plain")

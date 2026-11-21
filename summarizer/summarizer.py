@@ -1,7 +1,7 @@
 """
 AI summarizer using Google Gemini (google-genai SDK).
 
-For transcripts under 100K chars we do a single-pass summarization.
+For transcripts under 50K chars we do a single-pass summarization.
 For longer ones we chunk. Free tier: 15 req/min on 3.5-flash-lite.
 """
 import os
@@ -10,6 +10,7 @@ import re
 import time
 from pathlib import Path
 from datetime import datetime
+from backend.db import resolve_path
 
 from google import genai
 from google.genai import types
@@ -35,17 +36,17 @@ Transcript:
 
 Respond with ONLY valid JSON (no markdown fences, no explanation):
 {{
-  "tldr": "2-3 sentence executive summary of the call",
+  "tldr": ["Concise executive-summary point 1", "Concise executive-summary point 2"],
   "management_commentary": ["key management point 1", "key point 2", "..."],
   "guidance": ["specific guidance given"] or ["No specific guidance was provided in this call"],
-  "segment_performance": ["Segment name: performance detail"] or ["No segment breakdown discussed"],
+  "segment_performance": [{{"segment": "segment name", "notes": "performance detail"}}],
   "key_metrics": [
-    {{"metric": "metric name", "value": "exact value with units", "period": "quarter/period", "note": "context"}}
+    {{"metric": "metric name", "value": "exact value with units", "context": "period and other context"}}
   ],
-  "qa_highlights": [
-    {{"question": "analyst question", "answer": "management response summary"}}
+  "notable_qa": [
+    {{"question": "analyst question", "answer": "management response summary", "asked_by": "analyst name or empty string"}}
   ],
-  "risks_and_concerns": ["risk 1", "risk 2"] or ["No specific risks mentioned"]
+  "risks": ["risk 1", "risk 2"] or ["No specific risks mentioned"]
 }}"""
 
 CHUNK_PROMPT = """Analyze this portion of an earnings call transcript for {company}.
@@ -68,13 +69,13 @@ Only use what's in the notes. No fabrication.
 
 Respond with ONLY valid JSON (no markdown):
 {{
-  "tldr": "2-3 sentence executive summary",
+  "tldr": ["Concise executive-summary point 1", "Concise executive-summary point 2"],
   "management_commentary": ["point 1", "..."],
   "guidance": ["guidance item"] or ["No specific guidance provided"],
-  "segment_performance": ["Segment: detail"] or ["No segments discussed"],
-  "key_metrics": [{{"metric": "...", "value": "...", "period": "...", "note": "..."}}],
-  "qa_highlights": [{{"question": "...", "answer": "..."}}],
-  "risks_and_concerns": ["risk 1"] or ["No risks mentioned"]
+  "segment_performance": [{{"segment": "...", "notes": "..."}}],
+  "key_metrics": [{{"metric": "...", "value": "...", "context": "..."}}],
+  "notable_qa": [{{"question": "...", "answer": "...", "asked_by": "..."}}],
+  "risks": ["risk 1"] or ["No risks mentioned"]
 }}"""
 
 
@@ -91,7 +92,10 @@ def _call(client, prompt: str, retries: int = 5) -> str:
             resp = client.models.generate_content(
                 model=MODEL,
                 contents=prompt,
-                config=types.GenerateContentConfig(temperature=0.1),
+                config=types.GenerateContentConfig(
+                    temperature=0.1,
+                    response_mime_type="application/json",
+                ),
             )
             time.sleep(INTER_CALL_DELAY)
             return resp.text
@@ -133,7 +137,9 @@ def _summarize_chunked(client, company: str, text: str) -> dict:
             if b > start + CHUNK_SIZE // 2:
                 end = b
         chunks.append(text[start:end])
-        start = end - OVERLAP
+        if end == len(text):
+            break
+        start = max(start + 1, end - OVERLAP)
 
     print(f"  chunking into {len(chunks)} parts...")
     notes = []
@@ -143,48 +149,180 @@ def _summarize_chunked(client, company: str, text: str) -> dict:
         notes.append(note)
 
     combined = "\n\n---\n\n".join(notes)
-    raw = _call(client, AGGREGATE_PROMPT.format(company=company, notes=combined[:30000]))
+    raw = _call(client, AGGREGATE_PROMPT.format(company=company, notes=combined))
     return _parse_json(raw)
 
 
+def _as_list(value) -> list:
+    if value is None:
+        return []
+    return value if isinstance(value, list) else [value]
+
+
+def normalize_summary(data: dict) -> dict:
+    """Convert model output and older prompt aliases to the assignment schema."""
+    data["tldr"] = _as_list(data.get("tldr"))
+    for key in ("management_commentary", "guidance", "segment_performance",
+                "key_metrics", "notable_qa", "risks"):
+        aliases = {
+            "notable_qa": "qa_highlights",
+            "risks": "risks_and_concerns",
+        }
+        data[key] = _as_list(data.get(key, data.get(aliases.get(key, ""))))
+
+    segments = []
+    for segment in data["segment_performance"]:
+        if isinstance(segment, dict):
+            segments.append({
+                "segment": str(segment.get("segment", "")),
+                "notes": str(segment.get("notes", segment.get("performance", ""))),
+            })
+        else:
+            name, separator, notes = str(segment).partition(":")
+            segments.append({
+                "segment": name.strip() if separator else "",
+                "notes": notes.strip() if separator else str(segment),
+            })
+    data["segment_performance"] = segments
+
+    metrics = []
+    for metric in data["key_metrics"]:
+        if not isinstance(metric, dict):
+            continue
+        context = metric.get("context")
+        if context is None:
+            context = " — ".join(
+                str(value) for value in (metric.get("period"), metric.get("note"))
+                if value
+            )
+        metrics.append({
+            "metric": str(metric.get("metric", "")),
+            "value": str(metric.get("value", "")),
+            "context": str(context),
+        })
+    data["key_metrics"] = metrics
+
+    qa = []
+    for item in data["notable_qa"]:
+        if isinstance(item, dict):
+            qa.append({
+                "question": str(item.get("question", "")),
+                "answer": str(item.get("answer", "")),
+                "asked_by": str(item.get("asked_by", "")),
+            })
+    data["notable_qa"] = qa
+    data.pop("qa_highlights", None)
+    data.pop("risks_and_concerns", None)
+    return data
+
+
+def transcript_metadata(filing: dict, text: str) -> dict:
+    scrip_code = re.search(
+        r"\bBSE\s*Scrip\s*Code\s*[:\-]\s*([0-9]{5,6})", text, re.IGNORECASE
+    )
+    nse_symbol = re.search(
+        r"\bNSE\s*Symbol\s*[:\-]\s*([A-Z0-9&.-]+)", text, re.IGNORECASE
+    )
+    quarter = re.search(
+        r"\bQ[1-4](?:\s*(?:&|and)\s*H[1-2])?\s*FY\s*\d{2,4}\b",
+        text,
+        re.IGNORECASE,
+    )
+    call_date = ""
+    date_match = re.search(
+        r"\bheld\s+on\s+([A-Za-z]+\s+\d{1,2},?\s+\d{4})",
+        text,
+        re.IGNORECASE,
+    )
+    if date_match:
+        date_text = date_match.group(1).replace(",", "")
+        for date_format in ("%B %d %Y", "%b %d %Y"):
+            try:
+                call_date = datetime.strptime(date_text, date_format).date().isoformat()
+                break
+            except ValueError:
+                continue
+
+    return {
+        "scrip_code": scrip_code.group(1) if scrip_code else "",
+        "nse_symbol": nse_symbol.group(1) if nse_symbol else str(filing.get("symbol") or ""),
+        "quarter": re.sub(r"\s+", " ", quarter.group(0)).upper() if quarter else "",
+        "call_date": call_date,
+    }
+
+
 def _valid(data: dict) -> bool:
-    required = ["tldr", "management_commentary", "guidance",
-                "segment_performance", "key_metrics", "qa_highlights", "risks_and_concerns"]
-    return all(k in data for k in required)
+    required = {
+        "tldr": list,
+        "management_commentary": list,
+        "guidance": list,
+        "segment_performance": list,
+        "key_metrics": list,
+        "notable_qa": list,
+        "risks": list,
+    }
+    return (
+        all(isinstance(data.get(key), expected) for key, expected in required.items())
+        and bool(data["tldr"])
+    )
+
+
+def _has_summary_fields(data: dict) -> bool:
+    required = {
+        "tldr",
+        "management_commentary",
+        "guidance",
+        "segment_performance",
+        "key_metrics",
+    }
+    return (
+        required.issubset(data)
+        and ("notable_qa" in data or "qa_highlights" in data)
+        and ("risks" in data or "risks_and_concerns" in data)
+    )
 
 
 def _to_markdown(filing: dict, s: dict) -> str:
     md = f"# {filing['company']} — Earnings Call Summary\n\n"
     md += f"**Exchange:** {filing['exchange']} | **Filed:** {filing['filed_at']}  \n"
+    md += f"**Quarter:** {s.get('quarter') or 'Not identified'} | "
+    md += f"**Call date:** {s.get('call_date') or 'Not identified'}  \n"
     md += f"**Source:** [{filing['pdf_url']}]({filing['pdf_url']})\n\n---\n\n"
-    md += f"## TL;DR\n\n{s['tldr']}\n\n---\n\n"
+    md += "## TL;DR\n\n"
+    md += "".join(f"- {item}\n" for item in s["tldr"]) + "\n---\n\n"
 
     for title, key in [("Management Commentary", "management_commentary"),
                        ("Guidance & Outlook", "guidance"),
-                       ("Segment Performance", "segment_performance"),
-                       ("Risks & Concerns", "risks_and_concerns")]:
+                       ("Risks & Concerns", "risks")]:
         md += f"## {title}\n\n"
         for item in s.get(key, []):
             md += f"- {item}\n"
         md += "\n"
 
+    md += "## Segment Performance\n\n"
+    for item in s["segment_performance"]:
+        md += f"- **{item['segment'] or 'Segment'}:** {item['notes']}\n"
+    md += "\n"
+
     md += "## Key Metrics\n\n"
-    md += "| Metric | Value | Period | Notes |\n|--------|-------|--------|-------|\n"
+    md += "| Metric | Value | Context |\n|--------|-------|---------|\n"
     for m in s.get("key_metrics", []):
         if isinstance(m, dict):
-            md += f"| {m.get('metric','')} | {m.get('value','')} | {m.get('period','')} | {m.get('note','')} |\n"
+            md += f"| {m.get('metric','')} | {m.get('value','')} | {m.get('context','')} |\n"
 
     md += "\n## Analyst Q&A Highlights\n\n"
-    for qa in s.get("qa_highlights", []):
+    for qa in s.get("notable_qa", []):
         if isinstance(qa, dict):
-            md += f"**Q:** {qa.get('question','')}\n\n**A:** {qa.get('answer','')}\n\n---\n\n"
+            asked_by = f" ({qa['asked_by']})" if qa.get("asked_by") else ""
+            md += f"**Q{asked_by}:** {qa.get('question','')}\n\n"
+            md += f"**A:** {qa.get('answer','')}\n\n---\n\n"
 
     md += f"\n---\n*Generated by The AfterCall on {s.get('generated_at', '')}*\n"
     return md
 
 
 def summarize(filing: dict) -> tuple[Path, Path] | None:
-    text_path = Path(filing["text_path"])
+    text_path = resolve_path(filing["text_path"])
     if not text_path.exists():
         print(f"[summarizer] Missing: {text_path}")
         return None
@@ -220,13 +358,19 @@ def summarize(filing: dict) -> tuple[Path, Path] | None:
         print(f"[summarizer] Failed: {e}")
         return None
 
+    if not isinstance(data, dict) or not _has_summary_fields(data):
+        print("[summarizer] Invalid schema")
+        return None
+    data = normalize_summary(data)
     if not _valid(data):
         print(f"[summarizer] Invalid schema")
         return None
 
+    data.update(transcript_metadata(filing, text))
     data.update({
         "filing_id": filing["id"],
         "company": filing["company"],
+        "source": filing["exchange"],
         "exchange": filing["exchange"],
         "filed_at": filing["filed_at"],
         "generated_at": datetime.utcnow().isoformat() + "Z",

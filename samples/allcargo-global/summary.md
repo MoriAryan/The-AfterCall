@@ -1,0 +1,85 @@
+# Allcargo Global Limited — Earnings Call Summary
+
+**Exchange:** NSE | **Filed:** 20-Nov-2026 18:30:25  
+**Quarter:** Q2 & H1 FY27 | **Call date:** Not identified  
+**Source:** [https://nsearchives.nseindia.in/corporate/AGL_20112026183001_Reg_30_Transcrpit_of_Earning_callV1.pdf](https://nsearchives.nseindia.in/corporate/AGL_20112026183001_Reg_30_Transcrpit_of_Earning_callV1.pdf)
+
+---
+
+## TL;DR
+
+- Allcargo Global Limited reported its Q2 and H1 FY27 earnings, highlighting a return to profitability driven by gross profit improvements, disciplined cost control, and favorable industry tailwinds. Consolidated revenue for Q2 FY27 reached INR4,320 crores with an EBITDA of INR122 crores and profit after tax of INR32 crores.
+
+---
+
+## Management Commentary
+
+- Focus on profitable growth over the past year has improved gross profit through better trade lane management, high-yield products, and improved operational efficiency.
+- Staff and admin costs remained largely flat due to automation, outsourcing, and cost restraint initiatives.
+- The business is highly cash-generating with no significant capex, and past losses are turning profitable to lower actual cash tax payouts.
+- Plans are underway to change the financial year to align with the global operating calendar of January to December.
+- Industry freight rates are currently elevated due to geopolitical uncertainties and supply chain disruptions, but are expected to gradually soften over the next 4 to 5 months.
+
+## Guidance & Outlook
+
+- Normalized long-term industry growth target of 3% to 4% in FCL and 5% to 6% in LCL, with the company aiming to outgrow the market in LCL.
+- Reiterated the previously provided guidance of reaching a consistent annualized EBITDA of INR500 crores in the future.
+
+## Risks & Concerns
+
+- Geopolitical uncertainties and supply chain disruptions continuing to impact trade flows and port congestion.
+- Potential volatility in freight rates and normalization/softening of freight rates over the next few months affecting near-term performance.
+
+## Segment Performance
+
+- **LCL volume:** Declined 5.7% year-on-year, increased 2.9% quarter-on-quarter
+- **FCL volume:** Declined 12% year-on-year, increased 1.3% quarter-on-quarter
+- **Air volume:** Declined 10% year-on-year, increased 16% quarter-on-quarter
+
+## Key Metrics
+
+| Metric | Value | Context |
+|--------|-------|---------|
+| Consolidated Revenue | INR4,320 crores | Q2 FY27 — Up 27% YoY and 23% sequentially |
+| Gross Profit | INR837 crores | Q2 FY27 — Up 21% YoY and 14% higher than Q1 FY27 |
+| EBITDA | INR122 crores | Q2 FY27 — Compared to INR37 crores in Q2 FY26 and INR33 crores in Q1 FY27 |
+| EBITDA Margin | 2.8% | Q2 FY27 — Compared to 1.1% in Q2 FY26 and 0.9% in Q1 FY27 |
+| EBIT | INR71 crores | Q2 FY27 — Compared to loss of INR49 crores in Q2 FY26 and loss of INR23 crores in Q1 FY27 |
+| Profit After Tax | INR32 crores | Q2 FY27 — Compared to loss of INR30 crores in Q2 FY26 and loss of INR28 crores in Q1 FY27 |
+| Consolidated Revenue | INR7,842 crores | H1 FY27 — Grew 17% YoY |
+| Gross Profit | INR1,570 crores | H1 FY27 — Up 11% YoY |
+| EBITDA | INR155 crores | H1 FY27 — Compared to INR6 crores in H1 FY26 |
+| Profit After Tax | INR4 crores | H1 FY27 — Against loss of INR117 crores in prior period |
+| Net Debt | INR587 crores | As of September 30, 2026 — Compared to INR571 crores at the end of June 2026 |
+| Cash and Cash Equivalents | INR412 crores | As of September 30, 2026 — Increased from INR374 crores at the beginning of the year |
+| DSO | 46-47 days | Q2 FY27 — Receivables metric |
+
+## Analyst Q&A Highlights
+
+**Q:** Can you explain contract assets and receivables/bad debt provisions?
+
+**A:** Contract assets and liabilities represent freight on water revenues per IND AS accounting standards until shipment arrives at destination. Bad debt levels currently reflect historical cleanup of Middle East items and are expected to normalize by the December quarter end.
+
+---
+
+**Q:** Is the volume decline industry-wide, and what is the market share trend?
+
+**A:** Volume declines are largely driven by market declines particularly in West Asia. Sequentially, the company grew across all products and has maintained or gained market share.
+
+---
+
+**Q:** How do ocean freight tariffs impact profitability?
+
+**A:** Freight rates are currently elevated due to supply chain disruptions and peak season, contributing roughly 20-30% of current gains, while business initiatives contribute 70%. Rates are expected to soften over the next 4-5 months.
+
+---
+
+**Q:** What is preventing the company from reducing SG&A costs like European peers such as DSV?
+
+**A:** European peers like DSV primarily rely on massive global acquisitions followed by staff reductions, whereas Allcargo's asset-light LCL model and cost structure have already achieved reduction in constant currency/dollar terms while keeping base costs flat.
+
+---
+
+
+---
+*Generated by The AfterCall on 2026-11-21T11:10:28.162011Z*

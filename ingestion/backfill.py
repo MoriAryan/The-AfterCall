@@ -9,7 +9,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from ingestion.nse import fetch_concall_range
 from ingestion.downloader import download_pdf
-from backend.db import init_db, filing_exists, insert_filing, update_filing
+from backend.db import init_db, filing_exists, insert_filing, update_filing, stored_path
 
 # Target well-known companies across sectors for the initial backfill
 # If these aren't in the latest window, we fall back to whatever we find
@@ -60,7 +60,11 @@ def backfill(limit: int = 10, days_back: int = 7):
         pdf_path = download_pdf(filing)
 
         if pdf_path:
-            update_filing(filing["id"], pdf_path=str(pdf_path), status="extracted_pending")
+            update_filing(
+                filing["id"],
+                pdf_path=stored_path(pdf_path),
+                status="extracted_pending",
+            )
             downloaded += 1
             print(f"[backfill] ({downloaded}/{limit}) {filing['company']}")
         else:

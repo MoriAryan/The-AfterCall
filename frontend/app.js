@@ -1,5 +1,5 @@
 const API = "";
-const WS_URL = `ws://${location.host}/ws`;
+const WS_URL = `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/ws`;
 
 let ws;
 
@@ -71,13 +71,23 @@ async function renderCompanies(companies) {
   }));
 
   container.innerHTML = cards.map(c => `
-    <a class="company-card" href="summary.html?id=${c.filing_id}">
-      <div class="card-exchange">${c.exchange}</div>
-      <div class="card-name">${c.company}</div>
-      ${c.tldr ? `<div class="card-tldr">${c.tldr}</div>` : ""}
-      <div class="card-meta">${formatDate(c.filed_at)}</div>
+    <a class="company-card" href="summary.html?id=${encodeURIComponent(c.filing_id || "")}">
+      <div class="card-exchange">${escapeHtml(c.exchange)}</div>
+      <div class="card-name">${escapeHtml(c.company)}</div>
+      ${c.tldr ? `<div class="card-tldr">${escapeHtml(Array.isArray(c.tldr) ? c.tldr.join(" ") : c.tldr)}</div>` : ""}
+      <div class="card-meta">${escapeHtml(formatDate(c.filed_at))}</div>
     </a>
   `).join("");
+}
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, char => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  })[char]);
 }
 
 function showLiveBanner(company) {

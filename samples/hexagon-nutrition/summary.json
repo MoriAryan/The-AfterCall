@@ -1,0 +1,133 @@
+{
+  "tldr": [
+    "Hexagon Nutrition Limited reported a 27% year-on-year revenue growth to INR214 crores for the first half of FY27, while maintaining strong demand and securing raw material inventories for the second half. Gross margins recovered sequentially by 310 basis points to 47% in Q2, and the company maintains its long-term annual growth guidance of 20% to 25%."
+  ],
+  "management_commentary": [
+    "Revenue from operations grew 27% year-on-year to INR214 crores for H1 FY27, with Q2 revenue up 15% year-on-year and 5% sequentially to INR110 crores.",
+    "Gross margin improved sequentially by about 310 basis points from Q1 to 47% in Q2, driven by pricing, procurement, and product mix initiatives.",
+    "Strategic inventory rose from INR84 crores in March to INR136 crores in September to secure key raw material supplies for confirmed H2 orders, and is expected to normalize by March 2027.",
+    "Nashik facility reconstruction work has been initiated and is being tracked on a timely and regular basis.",
+    "The balance sheet remains strong, with the company net cash positive by around INR9 crores, total equity at INR245 crores, and a debt-to-equity ratio of about 0.15."
+  ],
+  "guidance": [
+    "Maintain annual revenue growth guidance of 20% to 25% year-on-year."
+  ],
+  "segment_performance": [
+    {
+      "segment": "Branded Segment",
+      "notes": "Showed strong growth supported by healthy demand, field force expansion, and clinical nutrition portfolio; PentaSure accounts for over 95% of branded sales."
+    },
+    {
+      "segment": "Premix Business",
+      "notes": "Saw higher revenue growth year-on-year driven by strong order book and expanding geographic reach."
+    },
+    {
+      "segment": "ESG / Tender Business",
+      "notes": "Experienced temporary lumpiness/slowdown in Q2 due to awaiting letters of credit (LCs) from customers, with a total order book of about INR100 crores (INR75 crores expected to be shipped in H2)."
+    }
+  ],
+  "key_metrics": [
+    {
+      "metric": "H1 Revenue from Operations",
+      "value": "INR214 crores",
+      "context": "H1 FY27 — Up 27.3% year-on-year from INR168 crores"
+    },
+    {
+      "metric": "Q2 Revenue from Operations",
+      "value": "INR109.7 crores (INR110 crores)",
+      "context": "Q2 FY27 — Up 15.2% YoY and 5.1% QoQ"
+    },
+    {
+      "metric": "H1 EBITDA",
+      "value": "INR22.7 crores (INR23.7 crores before exceptional item)",
+      "context": "H1 FY27 — Margin of 10.6% and 11.1% respectively"
+    },
+    {
+      "metric": "Q2 EBITDA",
+      "value": "INR10.9 crores (INR12 crores before exceptional item)",
+      "context": "Q2 FY27 — Margin of 10.9% before exceptional item"
+    },
+    {
+      "metric": "H1 Profit After Tax (PAT)",
+      "value": "INR16.2 crores",
+      "context": "H1 FY27 — Compared with INR15.6 crores last year"
+    },
+    {
+      "metric": "Q2 Profit After Tax (PAT)",
+      "value": "INR8.2 crores",
+      "context": "Q2 FY27 — Up 1% from the first quarter"
+    },
+    {
+      "metric": "Q2 Gross Margin",
+      "value": "47%",
+      "context": "Q2 FY27 — Improved by about 310 bps from 43.9% in Q1 (vs 53.1% in Q2 last year)"
+    },
+    {
+      "metric": "H1 Basic Earnings Per Share (EPS)",
+      "value": "INR1.41",
+      "context": "H1 FY27 — Not specified"
+    },
+    {
+      "metric": "Inventory Balance",
+      "value": "INR136 crores",
+      "context": "As of September 30, 2026 — Rose from INR84 crores in March 2026"
+    },
+    {
+      "metric": "Cash, Bank Deposits, and Liquid Funds",
+      "value": "INR46.5 crores",
+      "context": "As of September 30, 2026 — Not specified"
+    },
+    {
+      "metric": "Total Borrowings",
+      "value": "INR37.4 crores",
+      "context": "As of September 30, 2026 — Net cash positive by around INR9 crores"
+    },
+    {
+      "metric": "Capacity Utilization",
+      "value": "30%",
+      "context": "H1 FY27 — Blended capacity utilization across plants"
+    },
+    {
+      "metric": "ESG Order Book",
+      "value": "INR100 crores",
+      "context": "Current — Close to INR75 crores expected to be shipped in H2"
+    }
+  ],
+  "filing_id": "0b697ce7fd3021ba",
+  "company": "Hexagon Nutrition Limited",
+  "exchange": "NSE",
+  "filed_at": "21-Nov-2026 15:05:59",
+  "generated_at": "2026-11-21T11:08:46.654820Z",
+  "source_url": "https://nsearchives.nseindia.in/corporate/HEXAGONNUTRITION_21112026150526_HNL-Transcript_Quarter_ended_17112026.pdf",
+  "notable_qa": [
+    {
+      "question": "Despite 27% revenue growth, why did PAT decline slightly in H1?",
+      "answer": "Management cited the gross margin impact from rising raw material prices (such as whey), increased investments in people/field force leading to higher salary and admin expenses, and a one-time exceptional impact of plant modification.",
+      "asked_by": ""
+    },
+    {
+      "question": "What are the primary drivers for inventory buildup in H1?",
+      "answer": "Inventory rose from INR84 crores to INR136 crores due to strategic procurement of key raw materials ahead of expected price hikes and preparation for confirmed H2 orders and delayed LCs. Inventory is expected to normalize by March 2027.",
+      "asked_by": ""
+    },
+    {
+      "question": "What is the status of the Nashik facility reconstruction and associated capex?",
+      "answer": "Reconstruction work has been initiated and is being tracked regularly. Total capex for the facility modification is planned around INR25 crores, majorly funded by a bank loan of INR20 crores.",
+      "asked_by": ""
+    },
+    {
+      "question": "What is the order book and expected execution for the ESG segment in H2?",
+      "answer": "The total ESG order book stands close to INR100 crores, out of which roughly INR75 crores is likely to be shipped in H2.",
+      "asked_by": ""
+    }
+  ],
+  "risks": [
+    "Higher raw material costs (specifically critical raw materials like whey) impacting gross margins.",
+    "Working capital impact resulting from inventory buildup, leading to a negative operating cash flow of INR8.6 crores for the half year."
+  ],
+  "scrip_code": "",
+  "nse_symbol": "HEXAGON",
+  "quarter": "Q2 AND H1 FY27",
+  "call_date": "2026-11-17",
+  "source": "NSE"
+}

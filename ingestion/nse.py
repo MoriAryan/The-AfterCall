@@ -4,8 +4,10 @@ NSE requires a session cookie — hit the main page first, then the API.
 """
 import time
 import hashlib
+import re
 import requests
 from datetime import datetime, timedelta
+from urllib.parse import unquote, urlparse
 
 CONCALL_DESC = "Analysts/Institutional Investor Meet/Con. Call Updates"
 MIN_TRANSCRIPT_SIZE_KB = 80  # filter out 1-page cover letters and schedule notices
@@ -46,12 +48,22 @@ def _parse_size_kb(size_str: str) -> float:
 
 def _parse_filing(item: dict, min_size_kb: float = MIN_TRANSCRIPT_SIZE_KB) -> dict | None:
     pdf_url = item.get("attchmntFile")
-    if not pdf_url or not pdf_url.endswith(".pdf"):
+    if not pdf_url or not urlparse(pdf_url).path.lower().endswith(".pdf"):
         return None
     if item.get("desc") != CONCALL_DESC:
         return None
 
-    # Skip obvious schedule notices by file size
+    title = " ".join(
+        str(item.get(key) or "")
+        for key in ("subject", "attFileName", "attachmentName", "an_desc")
+    )
+    filename = unquote(urlparse(pdf_url).path.rsplit("/", 1)[-1])
+    transcript_terms = ("transcript", "earningcall", "earningscall", "concall",
+                        "conferencecall", "investorcall")
+    searchable_title = re.sub(r"[\s_\-]+", "", f"{title} {filename}").lower()
+    if not any(term in searchable_title for term in transcript_terms):
+        return None
+
     size_kb = _parse_size_kb(item.get("attFileSize", "") or "")
     if size_kb > 0 and size_kb < min_size_kb:
         return None
@@ -71,6 +83,7 @@ def _parse_filing(item: dict, min_size_kb: float = MIN_TRANSCRIPT_SIZE_KB) -> di
         "filed_at": filed_at,
         "pdf_url": pdf_url,
         "size_kb": round(size_kb, 1),
+        "attempt_count": 0,
     }
 
 

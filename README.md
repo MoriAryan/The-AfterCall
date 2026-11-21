@@ -2,13 +2,13 @@
 
 **Automated earnings concall intelligence for NSE-listed Indian companies.**
 
-The AfterCall monitors NSE corporate announcements, identifies concall transcript filings, downloads and extracts their content, and generates AI-powered summaries — all in real time.
+The AfterCall polls NSE corporate announcements, identifies likely concall transcript filings, downloads and extracts their content, and generates AI-powered summaries. Processing is automatic, but detection is polling-based rather than instantaneous.
 
 ---
 
 ## Demo
 
-```
+```text
 start.bat                 # Windows
 bash start.sh             # Linux/macOS
 # Open http://localhost:8000
@@ -18,29 +18,26 @@ bash start.sh             # Linux/macOS
 
 ## Architecture
 
+```text
+NSE API -> Watcher -> Downloader -> Extractor -> Summarizer (Gemini)
+                                                     |
+                                               data/summaries/
+                                                     |
+                                     FastAPI (REST + WebSocket)
+                                                     |
+                                                Frontend (/)
 ```
-NSE API ──► Watcher ──► Downloader ──► Extractor ──► Summarizer (Gemini)
-                                                           │
-                                                     data/summaries/
-                                                           │
-                                           FastAPI (REST + WebSocket)
-                                                           │
-                                                      Frontend (/)
-```
-
-### Components
 
 | Path | What it does |
 |---|---|
-| `ingestion/nse.py` | Fetches concall filings from NSE via session-cookie API |
-| `ingestion/bse.py` | BSE fetcher (best-effort, non-fatal if unavailable) |
+| `ingestion/nse.py` | Fetches and title-filters likely transcript filings from NSE |
 | `ingestion/downloader.py` | Downloads PDFs with retry + dedup |
 | `ingestion/backfill.py` | Seeds initial data from last N days |
 | `extraction/extractor.py` | pdfplumber text extraction + pytesseract OCR fallback |
-| `summarizer/summarizer.py` | Gemini single-pass summarizer → JSON + Markdown |
+| `summarizer/summarizer.py` | Gemini single-pass or chunked summarizer -> JSON + Markdown |
 | `backend/db.py` | SQLite state store for filings and summaries |
 | `backend/main.py` | FastAPI server: REST API + WebSocket + serves frontend |
-| `backend/pipeline.py` | Orchestrates the full ingest→extract→summarize cycle |
+| `backend/pipeline.py` | Orchestrates the full ingest -> extract -> summarize cycle |
 | `frontend/` | Vanilla JS dashboard — company browser + summary viewer |
 
 ---
@@ -55,29 +52,25 @@ NSE API ──► Watcher ──► Downloader ──► Extractor ──► Sum
 
 ### Configuration
 
-```bash
-cp .env.example .env
-# Edit .env and set GEMINI_API_KEY
+```text
+Copy .env.example to .env and set GEMINI_API_KEY.
 ```
 
 ### First Run
 
 ```bash
-# 1. Download initial batch of concall transcripts (last 7 days, 10 companies)
-python ingestion/backfill.py 10 7
-
-# 2. Extract text from PDFs
-python -m extraction.run_extraction
-
-# 3. Generate AI summaries (takes a few minutes per transcript)
-python run_summarize.py
-
-# 4. Start the server (also runs the watcher automatically)
+# Start the watcher, API, UI, and WebSocket
 start.bat        # Windows
 bash start.sh    # Linux/macOS
 ```
 
-Then open **http://localhost:8000**
+Open **http://localhost:8000**. On a fresh install the watcher discovers and processes new filings; a historical backfill is optional:
+
+```bash
+python ingestion/backfill.py 10 7
+python -m extraction.run_extraction
+python run_summarize.py
+```
 
 ---
 
@@ -92,64 +85,53 @@ Then open **http://localhost:8000**
 | `GET /api/companies/{id}/transcript` | Get extracted transcript text |
 | `WS /ws` | WebSocket: receives `init` and `new-summary` events |
 
-### WebSocket Events
-
-**`init`** — sent on connect:
-```json
-{
-  "event": "init",
-  "companies": [{"filing_id": "...", "company": "...", "exchange": "NSE", "filed_at": "..."}]
-}
-```
-
-**`new-summary`** — broadcast when a transcript is processed:
-```json
-{
-  "event": "new-summary",
-  "filing_id": "abc123",
-  "company": "Acme Corp Limited",
-  "exchange": "NSE",
-  "filed_at": "20-Nov-2026 18:30:00",
-  "tldr": "Acme reported..."
-}
-```
-
 ---
 
 ## Data Storage
 
-```
+```text
 data/
-  pdfs/          Original downloaded PDFs (preserved)
-  texts/         Extracted plain text transcripts
-  summaries/
-    {filing_id}/
-      summary.json    Structured AI summary
-      summary.md      Human-readable Markdown
-  db.sqlite      Processing state (filings + summaries)
+  pdfs/          Original downloaded PDFs (local, gitignored)
+  texts/         Extracted plain text transcripts (local, gitignored)
+  summaries/     Generated JSON and Markdown summaries (local, gitignored)
+  db.sqlite      Processing state (local, gitignored)
 ```
 
----
-
-## How NSE Filtering Works
-
-NSE's `Analysts/Institutional Investor Meet/Con. Call Updates` category contains two types of filings:
-
-1. **Schedule notices** — brief 1-page PDFs announcing an upcoming call (< 80KB, 1 page)
-2. **Actual transcripts** — multi-page PDFs filed after the call (> 80KB, 5-25 pages)
-
-The ingestion layer filters by file size (`attFileSize` field in NSE's API) to skip schedule notices and only process actual transcripts.
+Database file paths are stored relative to the project root so moving a checkout does not invalidate completed filings.
 
 ---
+
+## Design Decisions and Trade-offs
+
+- **Transcript filtering:** the NSE category includes meeting notices as well as transcripts. Ingestion requires transcript-like attachment text (e.g. “transcript”, “earning call”, or “concall”) and a PDF of a minimum size; extracted documents are skipped if they are under 3,000 characters or lack a `Moderator:` speaker label. This reduces repeated false-positive processing but may reject unusually formatted transcripts.
+- **Retries:** failed processing attempts are capped at three and retried on later poll cycles. Skipped documents are terminal and are not retried.
+- **Storage:** the SQLite database stores paths relative to the project root. Runtime PDFs, extracted text, and generated summaries remain local and are gitignored.
+- **Summary format:** JSON follows the assignment's sample fields, with `tldr` as a list, segment objects, metric context, and `asked_by` on Q&A. Exchange and filing IDs are retained as additional traceability fields. Missing transcript metadata is left empty rather than inferred from the filing date.
+- **Exchange coverage:** the unattended watcher is NSE-only. A BSE fetcher is not wired into the pipeline, so this project does not claim BSE ingestion or cross-exchange deduplication.
+- **Long transcripts:** the summarizer uses overlapping chunks followed by an aggregation call. Map-reduce reduces prompt size but can lose nuance; chunk notes are sent without the previous fixed 30,000-character truncation.
+
+## Samples
+
+See [`samples/`](samples/) for three JSON and Markdown summaries. Original exchange PDFs and full transcript text are not redistributed here; each sample links to its NSE source filing.
+
+The current sample set covers logistics, nutrition, and FMCG; the assignment's suggested bank, IT, and pharma coverage is not yet represented.
+
+## What I'd Do With More Time
+
+- Wire BSE into the watcher, normalize its metadata, and deduplicate filings across exchanges by issuer, call date, and source document.
+- Improve transcript classification with structured exchange metadata and a curated test set of notices and transcripts.
+- Add integration tests for live exchange responses and model output, with recorded fixtures that do not require API calls in CI.
+- Improve extraction for multi-column PDFs and small-caps speaker names, and expose OCR quality diagnostics.
 
 ## Limitations
 
-- **NSE session cookies** expire periodically; the watcher refreshes them every 5 minutes
-- **BSE API** is unreliable from certain network conditions; the pipeline falls back gracefully to NSE-only
-- **Free-tier Gemini** rate limits: 15 req/min on `gemini-3.5-flash-lite`. The summarizer handles this with auto-retry and backoff
-- **Scanned PDFs**: Some companies upload image-scanned transcripts. OCR via `pytesseract` is attempted but quality varies. OCR requires Tesseract to be installed separately
-- The watcher polls NSE every 5 minutes (configurable via `POLL_INTERVAL`). It is not truly real-time
-- Transcript PDFs are sourced only from exchange filings. Direct investor-relations websites are not scraped
+- **Polling, not push:** NSE is polled every five minutes by default (`POLL_INTERVAL`). New filings are therefore detected with a delay, not the instant they are posted.
+- **NSE only:** BSE ingestion and cross-exchange deduplication are not implemented.
+- **Heuristic filtering:** titles, file size, extracted text length, and the moderator label reduce schedule-notice false positives but may miss transcripts with unusual filenames or layouts.
+- **Gemini availability:** rate limits and provider outages can delay a summary. Failed attempts are retried up to three times.
+- **Scanned PDFs:** OCR is attempted but quality varies and Tesseract must be installed separately.
+- **Metadata:** scrip code, symbol, quarter, and call date are parsed from transcript text when present; fields remain empty when not found.
+- **Source coverage:** only exchange attachments are processed; investor-relations sites and audio-only announcements are not scraped.
 
 ---
 

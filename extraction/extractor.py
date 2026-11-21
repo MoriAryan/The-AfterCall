@@ -10,6 +10,8 @@ import re
 import pdfplumber
 from pathlib import Path
 
+from backend.db import resolve_path
+
 TEXT_DIR = Path(__file__).parent.parent / "data" / "texts"
 
 # Lines that are almost certainly boilerplate to drop
@@ -92,7 +94,7 @@ def _remove_repeated_headers(text: str) -> str:
 
 def extract_and_save(filing: dict) -> Path | None:
     """Extract text from a filing's PDF and save to data/texts/."""
-    pdf_path = Path(filing["pdf_path"])
+    pdf_path = resolve_path(filing["pdf_path"])
     if not pdf_path.exists():
         print(f"[extract] PDF not found: {pdf_path}")
         return None
