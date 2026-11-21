@@ -3,11 +3,25 @@ The AfterCall — FastAPI backend.
 Exposes REST endpoints for companies and summaries, plus a WebSocket feed.
 """
 import os
+import sys
 import json
 import asyncio
 from pathlib import Path
 from contextlib import asynccontextmanager
 from typing import Set
+
+# Ensure project root is in path regardless of how the server is started
+ROOT = Path(__file__).parent.parent
+sys.path.insert(0, str(ROOT))
+
+# Load .env if present
+_env = ROOT / ".env"
+if _env.exists():
+    for _line in _env.read_text().splitlines():
+        _line = _line.strip()
+        if _line and not _line.startswith("#") and "=" in _line:
+            _k, _v = _line.split("=", 1)
+            os.environ.setdefault(_k.strip(), _v.strip())
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.staticfiles import StaticFiles

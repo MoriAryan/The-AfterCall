@@ -1,15 +1,19 @@
 """
 Pipeline orchestrator — ties together ingest → extract → summarize.
-Used by both the watcher and manual runs.
+Used by both the watcher loop and manual runs.
 """
+import sys
 import asyncio
 from pathlib import Path
+
+ROOT = Path(__file__).parent.parent
+sys.path.insert(0, str(ROOT))
 
 from backend.db import (
     init_db, filing_exists, insert_filing, update_filing,
     insert_summary, get_pending_filings
 )
-from ingestion.nse import fetch_concall_announcements
+from ingestion.nse import fetch_concall_announcements, fetch_concall_range
 from ingestion.downloader import download_pdf
 from extraction.extractor import extract_and_save
 from summarizer.summarizer import summarize
